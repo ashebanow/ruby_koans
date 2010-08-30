@@ -45,20 +45,31 @@ end
 module EdgeCase
 
   module Color
-    #shamelessly stolen from redgreen
-    #
-    COLORS = { :clear => 0, :red => 31, :green => 32, :yellow => 33, :blue => 34, :magenta => 35, :cyan => 36 }
-    def self.method_missing(color_name, *args)
-      color(color_name) + args.first + color(:clear) 
-    end 
-    def self.color(color)
-      if ENV['NO_COLOR']
-        ""
-      else
-        "\e[#{COLORS[color.to_sym]}m"
-      end
+    #shamelessly stolen (and modified) from redgreen
+    COLORS = {
+      :clear   => 0,  :black   => 30, :red   => 31,
+      :green   => 32, :yellow  => 33, :blue  => 34,
+      :magenta => 35, :cyan    => 36,
+    }
 
-    end 
+    module_function
+
+    COLORS.each do |color, value|
+      module_eval "def #{color}(string); colorize(string, #{value}); end"
+      module_function color
+    end
+
+    def colorize(string, color_value)
+      if ENV['NO_COLOR']
+        string
+      else
+        color(color_value) + string + color(COLORS[:clear])
+      end
+    end
+
+    def color(color_value)
+      "\e[#{color_value}m"
+    end
   end
 
   class Sensei
@@ -117,7 +128,7 @@ module EdgeCase
         end
         puts
       end
-      puts Color.green(say_something_zenlike)
+      puts Color.green(a_zenlike_statement)
     end
 
     def find_interesting_lines(backtrace)
@@ -128,7 +139,7 @@ module EdgeCase
 
     # Hat's tip to Ara T. Howard for the zen statements from his
     # metakoans Ruby Quiz (http://rubyquiz.com/quiz67.html)
-    def say_something_zenlike
+    def a_zenlike_statement
       puts
       if !failed?
         zen_statement =  "Mountains are again merely mountains"
